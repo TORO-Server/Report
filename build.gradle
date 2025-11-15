@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+group = 'prj.salmon'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    compileOnly "io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Jar).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

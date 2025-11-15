@@ -1,0 +1,11 @@
+name: Report
+version: 1.0
+main: prj.salmon.report.Report
+api-version: 1.20
+commands:
+  report:
+    description: プレイヤーを通報する
+  reportblock:
+    description: プレイヤーからの通報を制限する
+    permission: report.block
+    permission-message: 権限がありません
