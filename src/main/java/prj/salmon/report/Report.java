@@ -7,13 +7,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.*;
 
@@ -22,7 +24,6 @@ import java.util.*;
 public class Report extends JavaPlugin implements Listener {
     private static webhooksender webhookSender;
     private final Map<UUID, SessionState> sessions = new HashMap<>();
-    private final Deque<Long> reportTimestamps = new ArrayDeque<>();
     private final Set<String> blockedReports = new HashSet<>();
 
     @Override
@@ -94,7 +95,7 @@ public class Report extends JavaPlugin implements Listener {
     }
 
     private void openReasonMenu(Player p) {
-        Inventory inv = Bukkit.createInventory(null, 27, "通報理由を選択");
+        Inventory inv = Bukkit.createInventory(null, 27, Component.text("通報理由を選択"));
 
         inv.setItem(11, item(Material.TNT, "破壊(荒らし行為)"));
         inv.setItem(13, item(Material.GRAY_CONCRETE_POWDER, "嫌がらせ"));
@@ -105,7 +106,7 @@ public class Report extends JavaPlugin implements Listener {
     }
 
     private void openPlayerMenu(Player p) {
-        Inventory inv = Bukkit.createInventory(null, 54, "誰を通報しますか？");
+        Inventory inv = Bukkit.createInventory(null, 54, Component.text("誰を通報しますか？"));
 
         int slot = 0;
         for (Player target : Bukkit.getOnlinePlayers()) {
@@ -117,7 +118,7 @@ public class Report extends JavaPlugin implements Listener {
     }
 
     private void openDestructionCheckMenu(Player p) {
-        Inventory inv = Bukkit.createInventory(null, 9, "破壊されているのは現在の場所ですか?");
+        Inventory inv = Bukkit.createInventory(null, 9, Component.text("破壊されているのは現在の場所ですか?"));
 
         inv.setItem(3, item(Material.LIME_CONCRETE, "はい"));
         inv.setItem(5, item(Material.RED_CONCRETE, "いいえ"));
@@ -131,14 +132,20 @@ public class Report extends JavaPlugin implements Listener {
         SessionState state = sessions.get(p.getUniqueId());
         if (state == null) return;
 
-        String title = e.getView().getTitle();
+        Component title = e.getView().title();
         
-        if (title.equals("通報理由を選択")) {
+        if (title.equals(Component.text("通報理由を選択"))) {
             e.setCancelled(true);
             ItemStack clicked = e.getCurrentItem();
             if (clicked == null) return;
 
-            String name = clicked.getItemMeta().getDisplayName();
+            String name = "";
+            if (clicked.hasItemMeta()) {
+                Component displayName = clicked.getItemMeta().displayName();
+                if (displayName != null) {
+                    name = PlainTextComponentSerializer.plainText().serialize(displayName);
+                }
+            }
             state.reason = name;
 
             if (name.equals("破壊(荒らし行為)")) {
@@ -167,12 +174,18 @@ public class Report extends JavaPlugin implements Listener {
             state.isTransitioning = true;
             openPlayerMenu(p);
         }
-        if (title.equals("破壊されているのは現在の場所ですか?")) {
+        if (title.equals(Component.text("破壊されているのは現在の場所ですか?"))) {
             e.setCancelled(true);
             ItemStack clicked = e.getCurrentItem();
             if (clicked == null) return;
 
-            String name = clicked.getItemMeta().getDisplayName();
+            String name = "";
+            if (clicked.hasItemMeta()) {
+                Component displayName = clicked.getItemMeta().displayName();
+                if (displayName != null) {
+                    name = PlainTextComponentSerializer.plainText().serialize(displayName);
+                }
+            }
             
             if (name.equals("はい")) {
                 state.isTransitioning = true;
@@ -186,12 +199,18 @@ public class Report extends JavaPlugin implements Listener {
         }
 
 
-        if (title.equals("誰を通報しますか？")) {
+        if (title.equals(Component.text("誰を通報しますか？"))) {
             e.setCancelled(true);
             ItemStack clicked = e.getCurrentItem();
             if (clicked == null) return;
 
-            String name = clicked.getItemMeta().getDisplayName();
+            String name = "";
+            if (clicked.hasItemMeta()) {
+                Component displayName = clicked.getItemMeta().displayName();
+                if (displayName != null) {
+                    name = PlainTextComponentSerializer.plainText().serialize(displayName);
+                }
+            }
 
             if (name.equals("ここにいない")) {
                 state.isTransitioning = true;
@@ -227,14 +246,14 @@ public class Report extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onChat(AsyncPlayerChatEvent e) {
+    public void onChat(AsyncChatEvent e) {
         Player p = e.getPlayer();
         SessionState state = sessions.get(p.getUniqueId());
         if (state == null) return;
 
         if (state.waitingReasonText) {
             e.setCancelled(true);
-            state.reasonDetail = e.getMessage();
+            state.reasonDetail = PlainTextComponentSerializer.plainText().serialize(e.message());
             state.waitingReasonText = false;
             Bukkit.getScheduler().runTask(this, () -> openPlayerMenu(p));
             return;
@@ -242,7 +261,7 @@ public class Report extends JavaPlugin implements Listener {
 
         if (state.waitingHarassmentDetail) {
             e.setCancelled(true);
-            state.harassmentDetail = e.getMessage();
+            state.harassmentDetail = PlainTextComponentSerializer.plainText().serialize(e.message());
             state.waitingHarassmentDetail = false;
 
             Bukkit.getScheduler().runTask(this, () -> openPlayerMenu(p));
@@ -251,7 +270,7 @@ public class Report extends JavaPlugin implements Listener {
 
         if (state.waitingPlayerName) {
             e.setCancelled(true);
-            state.target = e.getMessage();
+            state.target = PlainTextComponentSerializer.plainText().serialize(e.message());
             state.waitingPlayerName = false;
             Bukkit.getScheduler().runTask(this, () -> finishReport(p));
         }
@@ -283,7 +302,7 @@ public class Report extends JavaPlugin implements Listener {
     private ItemStack item(Material m, String name) {
         ItemStack i = new ItemStack(m);
         ItemMeta im = i.getItemMeta();
-        im.setDisplayName(name);
+        im.displayName(Component.text(name));
         i.setItemMeta(im);
         return i;
     }
@@ -292,7 +311,7 @@ public class Report extends JavaPlugin implements Listener {
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta sm = (SkullMeta) head.getItemMeta();
         sm.setOwningPlayer(p);
-        sm.setDisplayName(p.getName());
+        sm.displayName(Component.text(p.getName()));
         head.setItemMeta(sm);
         return head;
     }
