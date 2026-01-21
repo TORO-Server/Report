@@ -1,0 +1,29 @@
+# Handle line endings automatically for files detected as text
+# and leave all files detected as binary untouched.
+* text=auto
+
+# Check out text files with LF, commit with LF
+# This enforces LF ending in the repository and on checkout
+# If the user is on Windows and wants CRLF locally but LF in repo, 
+# 'text=auto' usually handles normalization, but specific forcing can be better for consistency.
+# However, usually regarding "unifying", forcing LF is common in cross-platform projects.
+# Let's use text eol=lf to force LF locally and remotely if that's the "unification" goal.
+# But standard Git behavior 'text=auto' is safer for mixed environments unless strictly LF is desired everywhere.
+# Given "consistency", often people want LF everywhere.
+
+* text=auto eol=lf
+
+# Explicitly declare text files to ensure they are normalized
+*.java text diff=java
+*.gradle text
+*.md text
+*.xml text
+*.properties text
+*.gitignore text
+
+# Binary files
+*.jar binary
+*.nar binary
+*.ear binary
+*.war binary
+*.class binary
