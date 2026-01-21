@@ -48,6 +48,7 @@ public class ReportListener implements Listener {
                     name = PlainTextComponentSerializer.plainText().serialize(displayName);
                 }
             }
+            if (name.isEmpty()) return;
             state.reason = name;
 
             if (name.equals("破壊(荒らし行為)")) {
@@ -113,6 +114,7 @@ public class ReportListener implements Listener {
                     name = PlainTextComponentSerializer.plainText().serialize(displayName);
                 }
             }
+            if (name.isEmpty()) return;
 
             if (name.equals("ここにいない")) {
                 state.isTransitioning = true;
@@ -123,6 +125,7 @@ public class ReportListener implements Listener {
             }
 
             state.target = name;
+            state.isTransitioning = true;
             p.closeInventory();
             finishReport(p);
         }
