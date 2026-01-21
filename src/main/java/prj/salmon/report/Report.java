@@ -286,14 +286,14 @@ public class Report extends JavaPlugin implements Listener {
                 p.getLocation().getY(),
                 p.getLocation().getZ());
 
-        String content = "対象: " + s.target +
-                "\n理由: " + s.reason +
-                (s.reasonDetail != null ? " (" + s.reasonDetail + ")" : "") +
-                (s.harassmentDetail != null ? "\n嫌がらせの詳細: " + s.harassmentDetail : "") +
-                "\n座標: " + coords;
+        String detail = null;
+        if (s.reasonDetail != null) {
+            detail = s.reasonDetail;
+        } else if (s.harassmentDetail != null) {
+            detail = "嫌がらせの詳細: " + s.harassmentDetail;
+        }
 
-
-        webhookSender.sendReport(p.getName(), content);
+        webhookSender.sendReport(p.getName(), s.target, s.reason, detail, coords);
 
         p.sendMessage("§a通報を送信しました。");
     }
