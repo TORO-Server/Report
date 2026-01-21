@@ -1,22 +1,26 @@
-package prj.salmon.report;
+package prj.salmon.report.utils;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
 import static org.bukkit.Bukkit.getLogger;
 
-public class webhooksender {
+public class WebhookSender {
     private final String webhookUrl;
 
-    public webhooksender(String webhookUrl) {
+    public WebhookSender(String webhookUrl) {
         this.webhookUrl = webhookUrl;
     }
 
-    public void sendReport(String reporter, String target, String reason, String detail, String coords) {
+    public CompletableFuture<Void> sendReportAsync(String reporter, String target, String reason, String detail, String coords) {
+        return CompletableFuture.runAsync(() -> sendReport(reporter, target, reason, detail, coords));
+    }
+
+    private void sendReport(String reporter, String target, String reason, String detail, String coords) {
         if (webhookUrl == null || webhookUrl.isEmpty()) {
             getLogger().warning("Webhook URLが設定されていません。送信スキップします。");
-
             return;
         }
 
@@ -25,7 +29,7 @@ public class webhooksender {
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
-            // エスケープ処理
+
             String safeReporter = escapeJson(reporter);
             String safeTarget = escapeJson(target);
             String safeReason = escapeJson(reason);
@@ -82,7 +86,7 @@ public class webhooksender {
 
 
             try (OutputStream os = connection.getOutputStream()) {
-                os.write(jsonPayload.getBytes());
+                os.write(jsonPayload.getBytes(StandardCharsets.UTF_8));
                 os.flush();
             }
 
