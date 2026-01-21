@@ -2,7 +2,7 @@ package prj.salmon.report;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 
 import static org.bukkit.Bukkit.getLogger;
 
@@ -21,7 +21,7 @@ public class webhooksender {
         }
 
         try {
-            HttpURLConnection connection = (HttpURLConnection) new URL(webhookUrl).openConnection();
+            HttpURLConnection connection = (HttpURLConnection) new URI(webhookUrl).toURL().openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
