@@ -6,7 +6,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -130,9 +132,9 @@ public class Report extends JavaPlugin implements Listener {
         if (state == null) return;
 
         String title = e.getView().getTitle();
-        e.setCancelled(true);
-
+        
         if (title.equals("通報理由を選択")) {
+            e.setCancelled(true);
             ItemStack clicked = e.getCurrentItem();
             if (clicked == null) return;
 
@@ -140,12 +142,14 @@ public class Report extends JavaPlugin implements Listener {
             state.reason = name;
 
             if (name.equals("破壊(荒らし行為)")) {
+                state.isTransitioning = true;
                 p.closeInventory();
                 openDestructionCheckMenu(p);
                 return;
             }
 
             if (name.equals("嫌がらせ")) {
+                state.isTransitioning = true;
                 p.closeInventory();
                 state.waitingHarassmentDetail = true;
                 p.sendMessage("§eどのような嫌がらせを受けましたか？チャット欄に入力してください。");
@@ -153,25 +157,29 @@ public class Report extends JavaPlugin implements Listener {
             }
 
             if (name.equals("その他")) {
+                state.isTransitioning = true;
                 p.closeInventory();
                 state.waitingReasonText = true;
                 p.sendMessage("§e通報内容をチャットで入力してください。");
                 return;
             }
 
+            state.isTransitioning = true;
             openPlayerMenu(p);
         }
         if (title.equals("破壊されているのは現在の場所ですか?")) {
+            e.setCancelled(true);
             ItemStack clicked = e.getCurrentItem();
             if (clicked == null) return;
 
             String name = clicked.getItemMeta().getDisplayName();
-            e.setCancelled(true);
-            p.closeInventory();
-
+            
             if (name.equals("はい")) {
+                state.isTransitioning = true;
+                p.closeInventory();
                 openPlayerMenu(p);
             } else {
+                p.closeInventory();
                 p.sendMessage("§cその場所に移動してから再度通報してください。");
                 sessions.remove(p.getUniqueId());
             }
@@ -179,12 +187,14 @@ public class Report extends JavaPlugin implements Listener {
 
 
         if (title.equals("誰を通報しますか？")) {
+            e.setCancelled(true);
             ItemStack clicked = e.getCurrentItem();
             if (clicked == null) return;
 
             String name = clicked.getItemMeta().getDisplayName();
 
             if (name.equals("ここにいない")) {
+                state.isTransitioning = true;
                 p.closeInventory();
                 state.waitingPlayerName = true;
                 p.sendMessage("§e通報するプレイヤーの名前を入力してください。わからない場合は適当な1文字を入力してください。");
@@ -195,6 +205,25 @@ public class Report extends JavaPlugin implements Listener {
             p.closeInventory();
             finishReport(p);
         }
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent e) {
+        if (!(e.getPlayer() instanceof Player p)) return;
+        SessionState state = sessions.get(p.getUniqueId());
+        if (state == null) return;
+
+        if (state.isTransitioning) {
+            state.isTransitioning = false;
+            return;
+        }
+
+        sessions.remove(p.getUniqueId());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent e) {
+        sessions.remove(e.getPlayer().getUniqueId());
     }
 
     @EventHandler
@@ -276,6 +305,7 @@ public class Report extends JavaPlugin implements Listener {
         boolean waitingReasonText;
         boolean waitingPlayerName;
         boolean waitingHarassmentDetail;
+        boolean isTransitioning;
     }
 
 }
