@@ -1,5 +1,5 @@
 name: Report
-version: 1.0
+version: 1.1.0
 main: prj.salmon.report.Report
 api-version: 1.20
 commands:
