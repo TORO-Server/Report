@@ -186,6 +186,9 @@ public class ReportListener implements Listener {
 
         int slot = 0;
         for (Player target : Bukkit.getOnlinePlayers()) {
+            // Slot 53 is the button below, and a player hidden from the viewer must not appear here.
+            if (slot >= 53) break;
+            if (!p.canSee(target)) continue;
             inv.setItem(slot++, targetHead(target));
         }
 
